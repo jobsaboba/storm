@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Storm">
+<title>Storm</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+  :root{
+    --bg:#050505; --panel:#0f0f10; --panel2:#151517; --panel3:#0a0a0b;
+    --line:#27272b; --line2:#1d1d20;
+    --ink:#f4f4f5; --dim:#9a9aa3; --faint:#6b6b73;
+    --green:#4ade80; --amber:#fbbf24; --red:#f87171; --white:#ffffff;
+    --radius:18px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0; background:var(--bg)}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink); padding:12px 12px 64px; max-width:500px; margin:0 auto;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+  [hidden]{display:none !important}
+  button,input{font:inherit}
+  .num{font-variant-numeric:tabular-nums}
+
+  header{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:2px 0 12px}
+  .brand{display:flex; align-items:center; gap:10px; min-width:0}
+  .logo{width:40px; height:40px; border-radius:11px; background:#000; border:1px solid #2a2a2d; flex:none}
+  .brandname{font-weight:900; font-size:1.12rem; letter-spacing:.2px; line-height:1.1}
+  .brandname b{color:#fff}
+  .brandsub{display:block; font-size:.56rem; color:var(--dim); letter-spacing:1.1px;
+    text-transform:uppercase; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .topbtns{display:flex; align-items:center; gap:7px; flex:none}
+  .datechip{font-size:.6rem; color:var(--dim); letter-spacing:1px; text-transform:uppercase; white-space:nowrap}
+  .iconbtn{background:var(--panel); border:1px solid var(--line); color:var(--dim); border-radius:10px;
+    padding:8px 10px; font-size:.9rem; cursor:pointer}
+  .iconbtn:active{border-color:#fff; color:#fff}
+  .iconbtn.spin{animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .hero{
+    background:linear-gradient(180deg,#151517 0%,#0a0a0b 100%);
+    border:1px solid var(--line); border-radius:20px; padding:14px;
+    margin-bottom:10px; box-shadow:0 14px 34px rgba(0,0,0,.55);
+  }
+  .hero-top{display:flex; justify-content:space-between; gap:10px; align-items:flex-start}
+  .label{font-size:.58rem; color:var(--dim); text-transform:uppercase; letter-spacing:1.3px}
+  .bank{font-size:2.05rem; font-weight:900; letter-spacing:-.6px; line-height:1.05; margin-top:2px}
+  .sub{font-size:.64rem; color:var(--dim); margin-top:5px; line-height:1.55}
+  .sub b{color:var(--ink); font-weight:800}
+  .hero-right{text-align:right; flex:none}
+  .stakebox{border:1px solid var(--line); background:var(--panel3); border-radius:12px;
+    padding:8px 10px; margin-top:2px}
+  .stakebox span{display:block; font-size:.52rem; color:var(--dim); text-transform:uppercase;
+    letter-spacing:1px; white-space:nowrap}
+  .stakebox b{display:block; font-size:.92rem; margin-top:2px; color:#fff; font-variant-numeric:tabular-nums}
+  .pill{display:inline-block; margin-top:6px; border:1px solid #4b4b24; background:#201f0b;
+    color:#f5e58b; border-radius:999px; padding:3px 7px; font-size:.56rem; font-weight:800;
+    letter-spacing:.4px; white-space:nowrap}
+  .hero-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:7px; margin-top:13px}
+  @media (max-width:360px){ .hero-grid{grid-template-columns:1fr 1fr} }
+  .hero-grid > div{background:var(--panel3); border:1px solid var(--line2); border-radius:12px;
+    padding:7px 5px; text-align:center; min-width:0}
+  .hero-grid span{display:block; font-size:.5rem; color:var(--dim); text-transform:uppercase;
+    letter-spacing:.9px; white-space:nowrap}
+  .hero-grid b{display:block; font-size:.84rem; margin-top:3px; font-variant-numeric:tabular-nums;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .pos{color:var(--green)} .neg{color:var(--red)} .amber{color:var(--amber)}
+
+  .tabs{display:flex; gap:6px; position:sticky; top:0; z-index:20;
+    background:rgba(5,5,5,.93); backdrop-filter:blur(9px); padding:8px 0; margin-bottom:7px}
+  .tab{flex:1; background:transparent; border:1px solid var(--line); color:var(--dim);
+    border-radius:10px; padding:8px 6px; font-weight:900; font-size:.7rem; cursor:pointer;
+    letter-spacing:.4px}
+  .tab.on{background:var(--ink); color:#000; border-color:var(--ink)}
+
+  .datebar{display:flex; gap:6px; align-items:center; margin:5px 0 9px}
+  .datebar input{flex:1; min-width:0; background:var(--panel); border:1px solid var(--line);
+    color:var(--ink); border-radius:10px; padding:9px 10px; font-size:.78rem; color-scheme:dark}
+  .navbtn,.latestbtn{background:var(--panel); border:1px solid var(--line); color:var(--ink);
+    border-radius:10px; padding:9px 11px; font-weight:900; cursor:pointer}
+  .navbtn:disabled{opacity:.35; cursor:default}
+  .latestbtn{font-size:.64rem; color:var(--dim); font-weight:800; white-space:nowrap}
+
+  .daymeta{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px}
+  .daymeta .card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:9px 10px}
+  .daymeta .k{font-size:.52rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px}
+  .daymeta .v{font-size:.9rem; font-weight:900; margin-top:3px; font-variant-numeric:tabular-nums}
+  .daymeta .s{font-size:.58rem; color:var(--dim); margin-top:3px; line-height:1.45}
+
+  .racecard{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:12px; margin-bottom:12px; box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  .rc-head{display:flex; justify-content:space-between; align-items:baseline; gap:8px}
+  .rc-head .t{font-weight:900; font-size:1rem; line-height:1.2}
+  .rc-head .meta{font-size:.57rem; color:var(--dim); text-align:right; line-height:1.45; flex:none}
+  .rc-name{font-size:.68rem; color:var(--dim); margin:3px 0 9px; line-height:1.4}
+  .banner{border:1px solid #33332a; background:#17170d; color:#e9e3b8; border-radius:10px;
+    padding:7px 9px; font-size:.62rem; line-height:1.45; margin:0 0 9px}
+  .banner.void{border-color:#333; background:#141416; color:#b9b9c1}
+  .banner.pending{border-color:#2d2d50; background:#0e0e1c; color:#c7d2fe}
+
+  .sel{background:var(--panel2); border:1px solid #232326; border-radius:14px;
+    padding:9px 11px; margin-bottom:8px}
+  .sel:last-of-type{margin-bottom:0}
+  .sel .row{display:flex; gap:8px; align-items:flex-start}
+  .sel .rk{font-weight:900; color:var(--faint); font-size:.68rem; min-width:16px; padding-top:2px}
+  .sel .mid{flex:1; min-width:0}
+  .sel .hn{font-weight:900; font-size:.95rem; line-height:1.2}
+  .sel .jt{font-size:.6rem; color:var(--dim); margin-top:1px; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis}
+  .badge{font-size:.52rem; font-weight:900; border-radius:6px; padding:3px 6px;
+    margin-left:4px; white-space:nowrap; letter-spacing:.3px; vertical-align:1px}
+  .badge.WIN{background:#052e16; color:#4ade80}
+  .badge.PLACE{background:#3a2a05; color:#fbbf24}
+  .badge.LOSE{background:#331111; color:#f87171}
+  .badge.NOBET,.badge.VOID,.badge.NR{background:#202023; color:#a1a1aa}
+  .badge.PENDING{background:#171733; color:#c7d2fe}
+  .badge.UNKNOWN,.badge.NOSP{background:#331111; color:#f87171}
+
+  .badgeline{display:flex; flex-wrap:wrap; gap:5px; margin-top:7px}
+  .chip{border:1px solid #29292d; border-radius:8px; padding:3px 6px; font-size:.55rem;
+    color:var(--dim); background:#0a0a0b; font-weight:700; white-space:nowrap}
+  .chip.cd{border-color:#14532d; color:#86efac}
+  .chip.days{border-color:#4a4214; color:#e9dd8b}
+  .chip.mark{border-color:#4a4214; color:#e9dd8b}
+  .chip.sp{border-color:#3f3f46; color:#fff; background:#18181b; font-weight:900}
+  .chip.ret.pos{border-color:#14532d; color:#4ade80}
+  .chip.ret.neg{border-color:#7f1d1d; color:#f87171}
+
+  .resultline{font-size:.64rem; color:var(--dim); margin-top:7px; line-height:1.55}
+  .resultline b{color:var(--ink)}
+  .resultline .note{color:var(--faint)}
+  .rc-foot{display:flex; justify-content:space-between; gap:8px; align-items:baseline;
+    border-top:1px solid #232326; margin-top:9px; padding-top:7px; font-size:.58rem; color:var(--dim)}
+  .rc-foot b{color:var(--ink); font-weight:900; font-variant-numeric:tabular-nums}
+
+  .empty,.loading{background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:16px; font-size:.72rem; color:var(--dim); text-align:center; line-height:1.6}
+  .empty span{color:var(--faint); font-size:.64rem}
+
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:12px; margin-bottom:12px}
+  .cardhead{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px}
+  .cardhead h2{font-size:.64rem; margin:0; text-transform:uppercase; letter-spacing:1.2px; color:var(--dim)}
+  .toggle{background:var(--panel3); border:1px solid var(--line); color:var(--dim);
+    border-radius:8px; padding:5px 8px; font-size:.55rem; font-weight:800; cursor:pointer;
+    text-transform:uppercase; letter-spacing:.7px}
+  .toggle:active{border-color:#fff; color:#fff}
+  .chartwrap svg{width:100%; height:auto; display:block}
+
+  .mini{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+  .mini > div{background:var(--panel3); border:1px solid var(--line2); border-radius:12px; padding:8px 9px}
+  .mini .k{font-size:.5rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px}
+  .mini .v{font-size:.82rem; font-weight:900; margin-top:3px; font-variant-numeric:tabular-nums;
+    line-height:1.25}
+  .mini .s{font-size:.54rem; color:var(--faint); margin-top:2px}
+
+  .months{width:100%; border-collapse:collapse; font-size:.66rem}
+  .months th{text-align:right; color:var(--dim); font-size:.5rem; text-transform:uppercase;
+    letter-spacing:.8px; padding:5px 3px; border-bottom:1px solid var(--line); font-weight:800}
+  .months th:first-child,.months td:first-child{text-align:left; padding-left:0}
+  .months th:last-child,.months td:last-child{padding-right:0}
+  .months td{padding:7px 3px; border-bottom:1px solid #1a1a1d; text-align:right;
+    font-variant-numeric:tabular-nums; color:#d4d4d8}
+  .months tr:last-child td{border-bottom:none}
+  .months .m{font-weight:800; color:var(--ink); white-space:nowrap}
+
+  .rulecard{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px; margin-bottom:12px}
+  .rulecard h2{font-size:.66rem; margin:0 0 8px; text-transform:uppercase; letter-spacing:1.25px;
+    color:#fff}
+  .rulecard p,.rulecard li{font-size:.68rem; color:var(--dim); line-height:1.7; margin:0}
+  .rulecard p + p{margin-top:7px}
+  .rulecard ul{margin:0; padding-left:17px}
+  .rulecard li{margin:3px 0}
+  .rulecard b{color:var(--ink)}
+  .rulecard .callout{border:1px solid #33332a; background:#17170d; color:#e9e3b8;
+    border-radius:10px; padding:9px 10px; font-size:.64rem; line-height:1.6; margin-top:9px}
+  .rulecard code{background:#0a0a0b; border:1px solid #242427; border-radius:5px;
+    padding:1px 4px; color:#e4e4e7; font-size:.62rem}
+
+  footer.hint{font-size:.56rem; color:var(--faint); text-align:center; line-height:1.7;
+    margin:18px 0 0}
+  footer.hint b{color:var(--dim)}
+
+  #toast{position:fixed; left:50%; bottom:20px; transform:translateX(-50%);
+    background:#18181b; border:1px solid #3f3f46; color:var(--ink); border-radius:10px;
+    padding:9px 12px; font-size:.66rem; z-index:99; box-shadow:0 10px 30px rgba(0,0,0,.6);
+    max-width:90vw; text-align:center; display:none}
+  #toast.show{display:block}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <img class="logo" src="icons/icon-192.png" alt="Storm">
+    <div style="min-width:0">
+      <div class="brandname">Storm</div>
+      <span class="brandsub">Win only · SP settled</span>
+    </div>
+  </div>
+  <div class="topbtns">
+    <span class="datechip" id="datechip">—</span>
+    <button class="iconbtn" id="refresh" title="Fetch latest" aria-label="Refresh">⟳</button>
+  </div>
+</header>
+
+<div class="hero" id="hero">
+  <div class="hero-top">
+    <div>
+      <div class="label">Bankroll</div>
+      <div class="bank num" id="bankBig">£—</div>
+      <div class="sub" id="bankSub">Loading the season…</div>
+    </div>
+    <div class="hero-right">
+      <div class="stakebox"><span>Next 1% stake</span><b id="nextStake">—</b></div>
+      <div class="pill" id="pendingPill" hidden></div>
+    </div>
+  </div>
+  <div class="hero-grid">
+    <div><span>P/L</span><b id="plBig">—</b></div>
+    <div><span>ROI</span><b id="roiBig">—</b></div>
+    <div><span>Bets</span><b id="betsBig">—</b></div>
+    <div><span>Win rate</span><b id="strikeBig">—</b></div>
+  </div>
+</div>
+
+<nav class="tabs" id="tabs">
+  <button class="tab on" data-tab="day">Day</button>
+  <button class="tab" data-tab="season">Season</button>
+  <button class="tab" data-tab="rules">Rules</button>
+</nav>
+
+<main>
+  <section id="tab-day" class="tabpane">
+    <div class="datebar">
+      <button class="navbtn" id="prevDay" title="Previous day" aria-label="Previous day">‹</button>
+      <input type="date" id="datePick" aria-label="Select date">
+      <button class="navbtn" id="nextDay" title="Next day" aria-label="Next day">›</button>
+      <button class="latestbtn" id="latestBtn">Latest</button>
+    </div>
+    <div class="daymeta" id="dayMeta"></div>
+    <div id="app"><div class="loading">Loading…</div></div>
+  </section>
+
+  <section id="tab-season" class="tabpane" hidden>
+    <div class="card">
+      <div class="cardhead">
+        <h2>Bank over the season</h2>
+        <button class="toggle" id="scaleToggle" title="Switch chart scale">log</button>
+      </div>
+      <div class="chartwrap"><svg id="chart" viewBox="0 0 440 190" role="img" aria-label="Bankroll chart"></svg></div>
+    </div>
+    <div class="card">
+      <div class="cardhead"><h2>Season numbers</h2></div>
+      <div class="mini" id="seasonStats"></div>
+    </div>
+    <div class="card">
+      <div class="cardhead"><h2>Months</h2></div>
+      <div id="months"></div>
+    </div>
+    <div class="card">
+      <div class="cardhead"><h2>Records</h2></div>
+      <div class="mini" id="records"></div>
+    </div>
+  </section>
+
+  <section id="tab-rules" class="tabpane" hidden>
+    <div class="rulecard">
+      <h2>The picks</h2>
+      <p>Sandstorm's locked rule v5, unchanged:</p>
+      <ul>
+        <li>UK &amp; Irish all-weather flat handicaps.</li>
+        <li>Course &amp; distance winner — Sporting Life's own career C+D stat.</li>
+        <li>Ran within the last 28 days.</li>
+        <li>Today's official rating strictly below the last visible C+D winning mark. If the winning run isn't visible, the horse is allowed.</li>
+        <li>Priced 3/1–33/1 at selection.</li>
+        <li>Ranked shortest odds first, freshest last run as tiebreak; at most three per race.</li>
+      </ul>
+      <p>Every qualifier is eligible. The 8+ runner rule belongs to the each-way book; a win-only bet does not need place terms.</p>
+    </div>
+
+    <div class="rulecard">
+      <h2>The money</h2>
+      <ul>
+        <li>Bank starts at <b>£10.00</b>.</li>
+        <li>Each horse carries <b>1% of the bank at the start of its race</b>, rounded to the penny.</li>
+        <li><b>Win:</b> profit = stake × SP.</li>
+        <li><b>Any other finish:</b> lose the stake. There is no place return.</li>
+        <li>All picks in one race use the same pre-race bank; the bank moves after the race.</li>
+        <li>Non-runners, withdrawn and abandoned/void races are no bets. Non-finishers are losses. Dead heats share the stake correctly.</li>
+        <li>If the bank falls below <b>50p</b>, 1% rounds below 1p and the book stops betting.</li>
+      </ul>
+      <div class="callout">
+        This is a <b>win-only book</b>. There is no each-way or place component.
+        A horse finishing second or third loses the full stake.
+      </div>
+    </div>
+
+    <div class="rulecard">
+      <h2>The data</h2>
+      <ul>
+        <li>Picks come from Sandstorm's stored <code>drafts-28</code> selection sheet.</li>
+        <li>Settlement uses the actual starting price / final odds shown on Sporting Life's result pages.</li>
+        <li>The daily refresh settles races as they finish and pushes the updated bank.</li>
+        <li>Historical picks are the stored Sandstorm backtest sheet. Because that sweep was fetched after racing, historical pick odds often already equal the SP; live picks are scored in the morning and settle at the actual SP later.</li>
+      </ul>
+      <p style="margin-top:8px">Win-only removes the place returns that carried the each-way book. The result is a much harsher bankroll, and the season page shows exactly how it played out.</p>
+      <p>Source: <b>sportinglife.com</b> racecards &amp; results. This is a backtest, not a guarantee.</p>
+    </div>
+
+    <div class="rulecard">
+      <h2>Reading the card</h2>
+      <ul>
+        <li><b>Pick</b> is the price Sandstorm selected at. <b>SP</b> is the actual starting price used to settle.</li>
+        <li><b>WIN</b> pays the SP. <b>LOSE</b> is any other finish, including second and third.</li>
+        <li><b>Placed (unpaid)</b> marks a horse that finished in the places but gets no money in this book.</li>
+        <li><b>NO BET</b> means the bank can't fund a 1p stake, or there is no runnable selection.</li>
+        <li><b>VOID</b> is an abandoned/void race; <b>NR</b> is a non-runner. Neither changes the bank.</li>
+        <li><b>PENDING</b> is a race that hasn't resulted yet; the target 1% stake is shown but not deducted.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer class="hint">
+  <b>Storm</b> · 2026 season · 1% win only at SP · all Sandstorm qualifiers<br>
+  Data: Sporting Life · Picks: Sandstorm v5 · © Dave Court
+  <span id="updated"></span>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const APP_VER = "1.0";
+
+let INDEX = null, SEASON = null, DAY = null, DAYS = [], CURRENT = null;
+let SCALE = "log";
+
+function esc(s){
+  return String(s ?? "").replace(/[&<>"']/g, c =>
+    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function money(n){
+  const v = Number(n);
+  if(!Number.isFinite(v)) return "£—";
+  return "£" + v.toLocaleString("en-GB", {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function signed(n){
+  const v = Number(n);
+  if(!Number.isFinite(v)) return "—";
+  const sign = v > 0 ? "+" : (v < 0 ? "−" : "");
+  return sign + "£" + Math.abs(v).toLocaleString("en-GB",
+    {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function pct(n){
+  const v = Number(n);
+  if(!Number.isFinite(v)) return "—";
+  return (v > 0 ? "+" : "") + v.toFixed(2) + "%";
+}
+function ordinal(n){
+  const v = Number(n);
+  if(!Number.isFinite(v)) return "";
+  if(v % 100 >= 10 && v % 100 <= 20) return v + "th";
+  return v + ({1:"st",2:"nd",3:"rd"}[v % 10] || "th");
+}
+function shortDate(d){
+  if(!d) return "—";
+  try{
+    return new Date(d + "T12:00:00").toLocaleDateString("en-GB",
+      {weekday:"short", day:"numeric", month:"short"});
+  }catch(e){ return d; }
+}
+function monthLabel(m){
+  try{
+    return new Date(m + "-01T12:00:00").toLocaleDateString("en-GB",
+      {month:"short", year:"2-digit"});
+  }catch(e){ return m; }
+}
+function parseStamp(s){
+  // Python's %z emits +0000; add the colon some engines insist on.
+  if(!s) return null;
+  const d = new Date(String(s).replace(/([+-]\d{2})(\d{2})$/, "$1:$2"));
+  return isNaN(d.getTime()) ? null : d;
+}
+function ukTime(date, time){
+  // Sporting Life's JSON race times are UTC; the site shows UK local time.
+  try{
+    const p = date.split("-").map(Number);
+    const dt = Date.UTC(p[0], p[1] - 1, p[2], 12);
+    const lastSun = (mi) => { const e = new Date(Date.UTC(p[0], mi + 1, 0));
+                              return e.getUTCDate() - e.getUTCDay(); };
+    const start = Date.UTC(p[0], 2, lastSun(2), 1);
+    const end   = Date.UTC(p[0], 9, lastSun(9), 1);
+    let mins = Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
+    if(dt >= start && dt < end) mins += 60;
+    return String(Math.floor(mins / 60) % 24).padStart(2, "0") + ":" +
+           String(mins % 60).padStart(2, "0");
+  }catch(e){ return time || ""; }
+}
+async function jget(path){
+  const res = await fetch(path + (path.includes("?") ? "&" : "?") + "ts=" + Date.now(),
+                          {cache:"no-store"});
+  if(!res.ok) throw new Error(path + " → HTTP " + res.status);
+  return res.json();
+}
+let toastTimer = null;
+function toast(msg, ms=2600){
+  const el = $("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), ms);
+}
+
+function updateHero(){
+  const s = SEASON?.summary || INDEX?.summary;
+  if(!s) return;
+  $("bankBig").textContent = money(s.bank_end);
+  $("bankSub").innerHTML =
+    `start ${money(s.bank_start)} · <b>${s.wins}W ${s.losses}L</b>` +
+    (s.pending ? ` · <b>${s.pending} pending</b>` : "") +
+    `<br>${SEASON ? esc(`${SEASON.start} → ${SEASON.end}`) : ""}`;
+  $("plBig").textContent = signed(s.profit);
+  $("plBig").className = "num " + (s.profit >= 0 ? "pos" : "neg");
+  $("roiBig").textContent = pct(s.roi);
+  $("roiBig").className = "num " + (s.roi >= 0 ? "pos" : "neg");
+  $("betsBig").textContent = Number(s.bets).toLocaleString("en-GB");
+  $("strikeBig").textContent = `${s.win_rate}%`;
+  $("nextStake").textContent = money(Math.round(Number(s.bank_end || 0)) / 100);
+  const pill = $("pendingPill");
+  if(Number(s.bank_end) < 0.5){
+    pill.hidden = false;
+    pill.textContent = "bank exhausted";
+  }else if(s.pending){
+    pill.hidden = false;
+    pill.textContent = `${s.pending} pending`;
+  }else{
+    pill.hidden = true;
+  }
+  if(SEASON?.updated){
+    const u = parseStamp(SEASON.updated);
+    if(u) $("updated").textContent = " · updated " +
+      u.toLocaleString([], {weekday:"short", hour:"2-digit", minute:"2-digit"});
+  }
+}
+
+function dayMetaHtml(){
+  if(!DAY) return "";
+  const s = DAY.summary;
+  const flags = [];
+  if(s.pending) flags.push(`${s.pending} pending`);
+  if(s.nobets) flags.push(`${s.nobets} no-bet`);
+  if(s.voids) flags.push(`${s.voids} void`);
+  if(s.nrs) flags.push(`${s.nrs} NR`);
+  return `
+    <div class="card">
+      <div class="k">Day</div>
+      <div class="v">${esc(shortDate(DAY.date))}</div>
+      <div class="s">bank ${money(DAY.bank.start)} → ${money(DAY.bank.end)}</div>
+    </div>
+    <div class="card">
+      <div class="k">Day P/L</div>
+      <div class="v ${s.profit >= 0 ? "pos" : "neg"}">${signed(s.profit)}</div>
+      <div class="s">staked ${money(s.staked)}</div>
+    </div>
+    <div class="card">
+      <div class="k">Record</div>
+      <div class="v">${s.wins}W · ${s.losses}L</div>
+      <div class="s">${s.bets} bet${s.bets === 1 ? "" : "s"} · 1% stake ${money(DAY.bank.stake)}${s.placed ? ` · ${s.placed} placed (unpaid)` : ""}</div>
+    </div>
+    <div class="card">
+      <div class="k">Flags</div>
+      <div class="v">${flags.length ? esc(flags.join(" · ")) : "—"}</div>
+      <div class="s">${s.pending ? "bank unchanged until settled" : (s.bets ? "all settled" : "no bank change")}</div>
+    </div>`;
+}
+
+function renderDay(){
+  $("dayMeta").innerHTML = dayMetaHtml();
+  const app = $("app");
+  app.innerHTML = "";
+  if(!DAY || !(DAY.races || []).length){
+    app.innerHTML = '<div class="empty">No Sandstorm qualifiers on this date.</div>';
+    return;
+  }
+  if(Number(DAY.bank.stake) <= 0){
+    app.insertAdjacentHTML("beforeend",
+      `<div class="banner">Bank exhausted — ${money(DAY.bank.end)} cannot fund a 1% stake (minimum 1p). No bets on this card.</div>`);
+  }
+  for(const rc of DAY.races){
+    try{ app.appendChild(raceCard(rc)); }
+    catch(err){
+      app.insertAdjacentHTML("beforeend",
+        `<div class="empty">Race skipped (${esc(err.message)}): ` +
+        `${esc(ukTime(DAY.date, rc.time))} ${esc(rc.meeting)}</div>`);
+    }
+  }
+}
+
+function raceCard(rc){
+  const el = document.createElement("div");
+  el.className = "racecard";
+  const time = ukTime(DAY.date, rc.time);
+  const meta = [];
+  if(rc.runners != null) meta.push(`${rc.runners} runners`);
+  if(rc.riders && rc.runners != null && rc.riders !== rc.runners)
+    meta.push(`${rc.riders} declared`);
+  el.innerHTML =
+    `<div class="rc-head">
+      <div class="t">${esc(time)} ${esc(rc.meeting)}</div>
+      <div class="meta">${esc(meta.join(" · "))}</div>
+    </div>
+    <div class="rc-name">${esc(rc.name || "")}</div>`;
+
+  if(rc.void){
+    el.insertAdjacentHTML("beforeend",
+      '<div class="banner void">Race abandoned / void — no bet, bank unchanged.</div>');
+  }else if(rc.pending){
+    el.insertAdjacentHTML("beforeend",
+      '<div class="banner pending">Awaiting result — target 1% stakes shown; bank unchanged.</div>');
+  }
+
+  for(const s of (rc.sel || [])){
+    const res = s.res || "PENDING";
+    const label = res === "NOBET" ? "NO BET" : res;
+    const badge = `<span class="badge ${esc(res)}">${esc(label)}</span>`;
+    const chips = [];
+    if(s.cd != null) chips.push(`<span class="chip cd">C+D ×${esc(s.cd)}</span>`);
+    if(s.days != null) chips.push(`<span class="chip days">${esc(s.days)}d</span>`);
+    if(s.mark != null && s.mark < 0)
+      chips.push(`<span class="chip mark">${esc(Math.abs(s.mark))}lb off mark</span>`);
+    if(s.odds) chips.push(`<span class="chip">pick ${esc(s.odds)}</span>`);
+    chips.push(`<span class="chip sp">SP ${esc(s.sp_txt || "—")}</span>`);
+    if(s.stake > 0) chips.push(`<span class="chip">stake ${money(s.stake)}</span>`);
+    if(["WIN","LOSE"].includes(s.res))
+      chips.push(`<span class="chip ret ${s.ret >= 0 ? "pos" : "neg"}">${signed(s.ret)}</span>`);
+
+    let line = "";
+    if(s.res === "WIN"){
+      line = `<b>Won at ${esc(s.sp_txt || "SP")}</b> · ${signed(s.ret)}`;
+    }else if(s.res === "LOSE"){
+      line = s.placed
+        ? `<b>Finished ${ordinal(s.pos)}</b> — no place return · ${signed(s.ret)}`
+        : `<b>Unplaced${s.pos ? " (" + ordinal(s.pos) + ")" : ""}</b> · ${signed(s.ret)}`;
+    }else if(s.res === "NOBET"){
+      line = `<b>No bet</b> — ${esc(s.note || "not eligible")}`;
+    }else if(s.res === "VOID" || s.res === "NR"){
+      line = `<b>${esc(label)}</b> — ${esc(s.note || "no bet")}`;
+    }else if(s.res === "PENDING" || s.res == null){
+      line = `<b>Awaiting result</b> — target ${money(s.stake)}`;
+    }else{
+      line = `<b>${esc(label)}</b> — ${esc(s.note || "")}`;
+    }
+    if(s.note && !["NOBET","VOID","NR","PENDING"].includes(s.res) &&
+       !(s.res === "LOSE" && s.note.includes("Did not finish")) &&
+       !(s.note.startsWith("Dead heat"))){
+      // keep the note visible for unusual settlement cases
+    }
+    if(s.note && (s.note.startsWith("Dead heat") ||
+                  s.note.includes("Did not finish"))){
+      line += ` <span class="note">· ${esc(s.note)}</span>`;
+    }
+
+    const node = document.createElement("div");
+    node.className = "sel";
+    node.innerHTML =
+      `<div class="row">
+        <div class="rk">${esc(s.rank ?? "")}</div>
+        <div class="mid">
+          <div class="hn">${esc(s.horse)} ${badge}</div>
+          <div class="jt">${esc(s.jockey || "")}</div>
+        </div>
+      </div>
+      <div class="badgeline">${chips.join("")}</div>
+      <div class="resultline">${line}</div>`;
+    el.appendChild(node);
+  }
+
+  const settled = (rc.sel || []).filter(s => ["WIN","LOSE"].includes(s.res));
+  const raceProfit = settled.reduce((a, s) => a + Number(s.ret || 0), 0);
+  const pendingBet = (rc.sel || []).some(s => s.res == null);
+  const foot = document.createElement("div");
+  foot.className = "rc-foot";
+  foot.innerHTML =
+    `<span>${settled.length
+      ? `Race P/L <b class="${raceProfit >= 0 ? "pos" : "neg"}">${signed(raceProfit)}</b>`
+      : (pendingBet ? "Race pending" : "No bank change")}</span>
+     <span>Bank <b>${money(rc.bank_after)}</b></span>`;
+  el.appendChild(foot);
+  return el;
+}
+
+function renderSeason(){
+  if(!SEASON){
+    $("seasonStats").innerHTML = '<div class="empty">Season data not loaded.</div>';
+    $("months").innerHTML = "";
+    $("records").innerHTML = "";
+    return;
+  }
+  const s = SEASON.summary;
+  $("seasonStats").innerHTML = [
+    ["Staked", money(s.staked), "all settled bets"],
+    ["Max drawdown", money(s.max_drawdown), "peak to trough"],
+    ["Peak bank", money(s.max_bank), "season high"],
+    ["Low bank", money(s.min_bank), "season low"],
+    ["No-bet picks", String(s.nobets), "stake below 1p"],
+    ["Void picks", String(s.voids), "abandoned races"],
+    ["NR picks", String(s.nrs), "non-runners"],
+    ["Pending picks", String(s.pending), "awaiting results"],
+  ].map(([k,v,sub]) =>
+    `<div><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div>
+     <div class="s">${esc(sub)}</div></div>`).join("");
+
+  const rows = (SEASON.months || []).map(m =>
+    `<tr>
+      <td class="m">${esc(monthLabel(m.month))}</td>
+      <td>${m.bets}</td>
+      <td>${m.wins}/${m.losses}</td>
+      <td class="${m.profit >= 0 ? "pos" : "neg"}">${signed(m.profit)}</td>
+      <td>${money(m.bank_end)}</td>
+    </tr>`).join("");
+  $("months").innerHTML =
+    `<table class="months">
+      <thead><tr><th>Month</th><th>Bets</th><th>W/L</th><th>P/L</th><th>Bank</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="5" style="text-align:center;color:var(--dim)">No months yet.</td></tr>'}</tbody>
+    </table>`;
+
+  const r = SEASON.records || {};
+  const items = [
+    ["Best day", r.best_day ? `${shortDate(r.best_day.date)} · ${signed(r.best_day.profit)}` : "—"],
+    ["Worst day", r.worst_day ? `${shortDate(r.worst_day.date)} · ${signed(r.worst_day.profit)}` : "—"],
+    ["Best month", r.best_month ? `${monthLabel(r.best_month.month)} · ${signed(r.best_month.profit)}` : "—"],
+    ["Worst month", r.worst_month ? `${monthLabel(r.worst_month.month)} · ${signed(r.worst_month.profit)}` : "—"],
+    ["Win rate", `${s.win_rate}%`, "of settled bets"],
+    ["Placed (unpaid)", String(s.placed), `${s.placed_rate}% finished in the money`],
+  ];
+  $("records").innerHTML = items.map(([k,v,sub]) =>
+    `<div><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div>
+     ${sub ? `<div class="s">${esc(sub)}</div>` : ""}</div>`).join("");
+
+  renderChart();
+}
+
+function compactMoney(v){
+  const n = Number(v);
+  if(!Number.isFinite(n)) return "£—";
+  if(n >= 1000) return "£" + (n / 1000).toFixed(n >= 10000 ? 0 : 1) + "k";
+  if(n >= 100) return "£" + Math.round(n);
+  if(n >= 10) return "£" + n.toFixed(0);
+  return "£" + n.toFixed(2);
+}
+
+function renderChart(){
+  const svg = $("chart");
+  if(!svg) return;
+  const data = (SEASON?.chart || []).filter(d => Number.isFinite(Number(d.bank)));
+  if(data.length < 2){
+    svg.innerHTML = '<text x="220" y="95" text-anchor="middle" fill="#6b6b73" font-size="10">No chart data yet</text>';
+    return;
+  }
+  const W = 440, H = 190, L = 44, R = 10, T = 12, B = 26;
+  const vals = data.map(d => Math.max(Number(d.bank), 0.01));
+  const mn = Math.min(...vals), mx = Math.max(...vals);
+  const log = SCALE === "log";
+  const lo = Math.log10(mn), hi = Math.log10(mx);
+  const y = (v) => {
+    const t = log
+      ? (Math.log10(Math.max(v, 0.01)) - lo) / (hi - lo || 1)
+      : (v - mn) / (mx - mn || 1);
+    return T + (H - T - B) * (1 - t);
+  };
+  const x = (i) => L + (W - L - R) * (i / (data.length - 1));
+
+  const pts = data.map((d, i) => `${x(i).toFixed(2)},${y(Number(d.bank)).toFixed(2)}`);
+  const line = "M" + pts.join(" L");
+  const area = `M${x(0).toFixed(2)},${(H - B).toFixed(2)} L` + pts.join(" L") +
+               ` L${x(data.length - 1).toFixed(2)},${(H - B).toFixed(2)} Z`;
+
+  let grid = "";
+  for(const t of [0, 0.5, 1]){
+    const yy = T + (H - T - B) * (1 - t);
+    const val = log ? Math.pow(10, lo + t * (hi - lo)) : mn + t * (mx - mn);
+    grid += `<line x1="${L}" y1="${yy.toFixed(2)}" x2="${W - R}" y2="${yy.toFixed(2)}"
+      stroke="#242427" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
+    grid += `<text x="${L - 5}" y="${(yy + 3).toFixed(2)}" text-anchor="end"
+      fill="#80808a" font-size="10.5">${compactMoney(val)}</text>`;
+  }
+  const mid = Math.floor((data.length - 1) / 2);
+  const xLabels =
+    `<text x="${x(0)}" y="${H - 6}" fill="#80808a" font-size="10.5" text-anchor="start">${esc(data[0].date.slice(5))}</text>` +
+    `<text x="${x(mid)}" y="${H - 6}" fill="#80808a" font-size="10.5" text-anchor="middle">${esc(data[mid].date.slice(5))}</text>` +
+    `<text x="${x(data.length - 1)}" y="${H - 6}" fill="#80808a" font-size="10.5" text-anchor="end">${esc(data[data.length - 1].date.slice(5))}</text>`;
+
+  const last = data[data.length - 1];
+  const lastX = x(data.length - 1), lastY = y(Number(last.bank));
+  // Keep the headline value inside the plot when the bank is at its peak.
+  const labelY = Math.max(lastY - 9, T + 14);
+  svg.innerHTML =
+    grid +
+    `<path d="${area}" fill="rgba(255,255,255,.07)"/>` +
+    `<path d="${line}" fill="none" stroke="#ffffff" stroke-width="1.6"
+       stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>` +
+    `<circle cx="${lastX.toFixed(2)}" cy="${lastY.toFixed(2)}" r="3" fill="#ffffff"/>` +
+    `<text x="${(lastX - 3).toFixed(2)}" y="${labelY.toFixed(2)}" text-anchor="end"
+       fill="#ffffff" font-size="11.5" font-weight="700"
+       stroke="#0b0b0c" stroke-width="3.5" paint-order="stroke">${money(last.bank)}</text>` +
+    xLabels;
+}
+
+async function loadDay(d){
+  if(!d) return;
+  CURRENT = d;
+  $("datePick").value = d;
+  $("datechip").textContent = shortDate(d);
+  const i = DAYS.indexOf(d);
+  $("prevDay").disabled = i <= 0;
+  $("nextDay").disabled = i < 0 || i >= DAYS.length - 1;
+  $("app").innerHTML = '<div class="loading">Loading…</div>';
+  try{
+    DAY = await jget("data/" + d + ".json");
+  }catch(err){
+    DAY = null;
+    $("dayMeta").innerHTML = "";
+    $("app").innerHTML =
+      `<div class="empty">Couldn’t load ${esc(d)}.<br><span>${esc(err.message)}</span></div>`;
+    return;
+  }
+  renderDay();
+  history.replaceState(null, "", "#" + d);
+}
+
+async function refreshAll(){
+  const btn = $("refresh");
+  btn.classList.add("spin");
+  const oldLatest = INDEX?.latest;
+  try{
+    const [idx, season] = await Promise.all([
+      jget("data/index.json"),
+      jget("data/season.json").catch(() => null),
+    ]);
+    INDEX = idx;
+    if(season) SEASON = season;
+    DAYS = idx.days || DAYS;
+    updateHero();
+    if(SEASON) renderSeason();
+    let target = CURRENT;
+    if(CURRENT === oldLatest && idx.latest !== oldLatest) target = idx.latest;
+    await loadDay(target || idx.latest);
+    toast("Updated");
+  }catch(err){
+    toast("Couldn’t refresh — " + err.message);
+  }finally{
+    btn.classList.remove("spin");
+  }
+}
+
+function bind(){
+  document.querySelectorAll(".tab").forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b === btn));
+      for(const id of ["day", "season", "rules"]){
+        $("tab-" + id).hidden = (id !== btn.dataset.tab);
+      }
+      if(btn.dataset.tab === "season") renderChart();
+      window.scrollTo({top:0, behavior:"smooth"});
+    };
+  });
+  $("prevDay").onclick = () => {
+    const i = DAYS.indexOf(CURRENT);
+    if(i > 0) loadDay(DAYS[i - 1]);
+  };
+  $("nextDay").onclick = () => {
+    const i = DAYS.indexOf(CURRENT);
+    if(i >= 0 && i < DAYS.length - 1) loadDay(DAYS[i + 1]);
+  };
+  $("latestBtn").onclick = () => { if(INDEX?.latest) loadDay(INDEX.latest); };
+  $("datePick").onchange = (e) => { if(e.target.value) loadDay(e.target.value); };
+  $("refresh").onclick = refreshAll;
+  $("scaleToggle").onclick = () => {
+    SCALE = SCALE === "log" ? "linear" : "log";
+    $("scaleToggle").textContent = SCALE;
+    renderChart();
+  };
+}
+
+async function init(){
+  bind();
+  try{
+    const [idx, season] = await Promise.all([
+      jget("data/index.json"),
+      jget("data/season.json").catch(() => null),
+    ]);
+    INDEX = idx;
+    SEASON = season;
+    DAYS = idx.days || [];
+    $("datePick").min = idx.first || "2026-01-01";
+    $("datePick").max = idx.latest || "";
+    updateHero();
+    if(SEASON) renderSeason();
+    const hash = (location.hash || "").replace("#", "");
+    const target = (hash && DAYS.includes(hash)) ? hash : idx.latest;
+    if(target) await loadDay(target);
+  }catch(err){
+    $("app").innerHTML =
+      `<div class="empty">No app data yet (${esc(err.message)}).<br>
+       Run the pipeline with <b>--rebuild</b>, then tap ⟳.</div>`;
+    $("bankSub").textContent = "No data loaded.";
+  }
+}
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  // Keep the event for a future install button; the browser menu still works.
+});
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(() => {});
+}
+init();
+</script>
+</body>
+</html>
